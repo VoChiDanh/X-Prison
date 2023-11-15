@@ -1,15 +1,22 @@
 package dev.drawethree.xprison.enchants.model.impl;
 
+import dev.drawethree.xprison.api.events.FortuneTriggerEvent;
 import dev.drawethree.xprison.enchants.XPrisonEnchants;
 import dev.drawethree.xprison.enchants.model.XPrisonEnchantment;
+import dev.drawethree.xprison.utils.Constants;
 import dev.drawethree.xprison.utils.compat.CompMaterial;
+import dev.drawethree.xprison.utils.misc.RegionUtils;
+import org.bukkit.Bukkit;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.codemc.worldguardwrapper.flag.WrappedState;
+import org.codemc.worldguardwrapper.region.IWrappedRegion;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
@@ -43,7 +50,14 @@ public final class FortuneEnchant extends XPrisonEnchantment {
         if (enchantLevel > 0) {
             Block block = e.getBlock();
             if (isFortuneAffectedBlock(block)) {
+                IWrappedRegion region = RegionUtils.getRegionWithHighestPriorityAndFlag(block.getLocation(), Constants.ENCHANTS_WG_FLAG_NAME, WrappedState.ALLOW);
+
+                if (region == null) {
+                    return;
+                }
                 e.getBlock().getDrops().forEach(itemStack -> itemStack.setAmount(calculateExtraDrops(enchantLevel)));
+                FortuneTriggerEvent fortuneTriggerEvent = new FortuneTriggerEvent(e.getPlayer(), region, block, block, new ArrayList<>(e.getBlock().getDrops()));
+                Bukkit.getPluginManager().callEvent(fortuneTriggerEvent);
             }
         }
     }
